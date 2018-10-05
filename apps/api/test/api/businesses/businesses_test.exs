@@ -246,4 +246,72 @@ defmodule Api.BusinessesTest do
       assert %Ecto.Changeset{} = Businesses.change_operator(operator)
     end
   end
+
+  describe "events" do
+    alias Api.Businesses.Event
+
+    @valid_attrs %{deleted: true, from_id: "some from_id", text: "some text", to_id: "some to_id", type: "some type"}
+    @update_attrs %{deleted: false, from_id: "some updated from_id", text: "some updated text", to_id: "some updated to_id", type: "some updated type"}
+    @invalid_attrs %{deleted: nil, from_id: nil, text: nil, to_id: nil, type: nil}
+
+    def event_fixture(attrs \\ %{}) do
+      {:ok, event} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Businesses.create_event()
+
+      event
+    end
+
+    test "list_events/0 returns all events" do
+      event = event_fixture()
+      assert Businesses.list_events() == [event]
+    end
+
+    test "get_event!/1 returns the event with given id" do
+      event = event_fixture()
+      assert Businesses.get_event!(event.id) == event
+    end
+
+    test "create_event/1 with valid data creates a event" do
+      assert {:ok, %Event{} = event} = Businesses.create_event(@valid_attrs)
+      assert event.deleted == true
+      assert event.from_id == "some from_id"
+      assert event.text == "some text"
+      assert event.to_id == "some to_id"
+      assert event.type == "some type"
+    end
+
+    test "create_event/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Businesses.create_event(@invalid_attrs)
+    end
+
+    test "update_event/2 with valid data updates the event" do
+      event = event_fixture()
+      assert {:ok, event} = Businesses.update_event(event, @update_attrs)
+      assert %Event{} = event
+      assert event.deleted == false
+      assert event.from_id == "some updated from_id"
+      assert event.text == "some updated text"
+      assert event.to_id == "some updated to_id"
+      assert event.type == "some updated type"
+    end
+
+    test "update_event/2 with invalid data returns error changeset" do
+      event = event_fixture()
+      assert {:error, %Ecto.Changeset{}} = Businesses.update_event(event, @invalid_attrs)
+      assert event == Businesses.get_event!(event.id)
+    end
+
+    test "delete_event/1 deletes the event" do
+      event = event_fixture()
+      assert {:ok, %Event{}} = Businesses.delete_event(event)
+      assert_raise Ecto.NoResultsError, fn -> Businesses.get_event!(event.id) end
+    end
+
+    test "change_event/1 returns a event changeset" do
+      event = event_fixture()
+      assert %Ecto.Changeset{} = Businesses.change_event(event)
+    end
+  end
 end

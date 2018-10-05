@@ -26,70 +26,39 @@ defmodule ApiWeb.ConnectToChannelTest do
 
     business_socket = %Phoenix.Socket{Enum.at(sockets, 0) | topic: "business:#{business.id}"}
 
-    {:ok, sockets: sockets, users: users, business: business, business_socket: business_socket}
+    {:ok, _, socket} =
+      subscribe_and_join(Enum.at(sockets, 0), "user:#{john.id}", %{
+        "last_event_id" => 1,
+        "chat_ids" => [1, 2, 3]
+      })
+
+    {:ok, _, socket} =
+      subscribe_and_join(Enum.at(sockets, 0), "user:#{john.id}", %{
+        "last_event_id" => 1,
+        "chat_ids" => [1, 2, 3]
+      })
+
+    {:ok,
+     sockets: sockets,
+     users: users,
+     business: business,
+     business_socket: business_socket,
+     socket: socket}
   end
 
   test "join channel for sockets", %{
-    sockets: [socket | sockets],
-    users: [john | users],
-    business: business,
-    business_socket: business_socket
+    socket: socket,
+    users: [u1 | _]
   } do
-    {:ok, _, john} =
-      subscribe_and_join(socket, "user:#{john.id}", %{
-        "mode" => "business",
-        "meta" => %{"business_id" => business.id}
-      })
+    topic = "user:#{u1.id}"
+    IO.inspect(socket)
 
-    [alex, mary] =
-      Enum.zip(sockets, users)
-      |> Enum.map(
-        &subscribe_and_join(elem(&1, 0), "user:#{elem(&1, 1).id}", %{
-          "mode" => "private",
-          "meta" => %{"business_id" => business.id}
-        })
-      )
+    :ets.lookup(Api.PubSub.Local0, topic)
+    |> IO.inspect()
 
-    john = %Phoenix.Socket{
-      john
-      | topic: "business:#{business.id}"
-    }
+    Phoenix.PubSub.Local.subscribers(Api.PubSub, "user:#{u1.id}", 0)
+    |> IO.inspect()
 
-    # IO.inspect(john)
-
-    # ref = push(john, "haha", %{"hello" => "world"})
-    # assert_reply(ref, :ok, %{"hello" => "world"})
-    # broadcast_from(john, "haha", %{"hello" => "world"})
-    # :timer.sleep(1000)
-    # ref =
-  end
-
-  test "broadcast is pushed back", %{
-    sockets: [socket | _],
-    users: [u1, u2, _],
-    business: business
-  } do
-    {:ok, _, john} =
-      subscribe_and_join(socket, "business:#{business.id}", %{
-        "mode" => "private",
-        "meta" => %{"business_id" => 1}
-      })
-
-    {:ok, _, mary} =
-      subscribe_and_join(socket, "user:#{u2.id}", %{
-        "mode" => "private",
-        "meta" => %{"business_id" => 1}
-      })
-
-    # john = %Phoenix.Socket{
-    #   socket
-    #   | topic: "user:#{u1.id}"
-    # }
-
-    broadcast_from(mary, "lol", %{hello: "world", id: business.id})
     :timer.sleep(1000)
-    IO.inspect(john)
-
-    assert_push("lol", %{hello: "world"})
   end
 end
