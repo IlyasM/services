@@ -29,16 +29,16 @@ defmodule ApiWeb.ChannelHelper do
     {messages, statuses}
   end
 
-  def online_map(ids) do
+  def online_map(ids, prepend) do
     ids
     |> Enum.reduce(%{}, fn id, acc ->
       online? =
-        case :ets.lookup(Api.PubSub.Local0, id) do
+        case :ets.lookup(Api.PubSub.Local0, "#{prepend}:#{id}") do
           [] -> false
           _ -> true
         end
 
-      Map.put(acc, id, online?)
+      Map.put(acc, "#{prepend}:#{id}", online?)
     end)
   end
 

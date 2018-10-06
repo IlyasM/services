@@ -8,6 +8,7 @@ defmodule Api.Repo.Migrations.CreateEvents do
       add(:type, :string)
       add(:deleted, :boolean, default: false, null: false)
       add(:text, :string)
+      add(:broadcast_id, :string)
 
       timestamps()
     end

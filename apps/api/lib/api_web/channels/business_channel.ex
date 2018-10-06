@@ -10,26 +10,25 @@ defmodule ApiWeb.BusinessChannel do
         socket
       ) do
     send(self(), {:after_join, ids})
-    business = Repo.get(Business, business_id) |> Repo.preload(:category)
+
+    business =
+      Repo.get(Business, business_id)
+      |> Repo.preload(:category)
+
     :ok = ApiWeb.Endpoint.subscribe("category:#{business.category.name}")
     {messages, statuses} = Helper.events(id, event_id)
 
     {:ok, %{messages: messages, statuses: statuses},
      socket
-     |> assign(:tracking_ids, ids)}
-  end
-
-  def handle_info({:after_join, ids}, socket) do
-    online_map = Helper.online_map(ids)
-
-    push(socket, "chats_online", online_map)
-
-    {:noreply, socket |> assign(:online_map, online_map)}
+     |> assign(:tracking_ids, ids)
+     |> assign(:business, business)
+     |> assign(:online_map, %{})}
   end
 
   def handle_in("new:msg", message, socket) do
     message = Helper.new_msg(message)
-    # to_id is of this form: business:id
+
+    # to_id is of this form: user:id
     ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
     {:reply, {:ok, message}, socket}
   end
@@ -52,19 +51,14 @@ defmodule ApiWeb.BusinessChannel do
     {:noreply, socket |> assign(:online_map, online_map)}
   end
 
-  def handle_out("typing", %{"id" => id}, socket) do
-    push(socket, "typing", %{"id" => id})
-    {:noreply, socket}
-  end
-
-  def handle_in("reply", payload, socket) do
-    ApiWeb.Endpoint.broadcast("user:#{payload.user_id}", "reply", payload)
+  def handle_out("typing", payload, socket) do
+    push(socket, "typing", payload)
     {:noreply, socket}
   end
 
   #  broadcast reaches the business
   def handle_info(
-        %Sb{topic: "category:" <> _, event: "new:broadcast", payload: payload},
+        %Sb{event: "new:broadcast", payload: payload},
         socket
       ) do
     push(socket, "new:broadcast", payload)
@@ -77,5 +71,13 @@ defmodule ApiWeb.BusinessChannel do
       ) do
     push(socket, "deactivate:broadcast", payload)
     {:noreply, socket}
+  end
+
+  def handle_info({:after_join, ids}, socket) do
+    online_map = Helper.online_map(ids, "user")
+
+    push(socket, "chats_online", online_map)
+
+    {:noreply, socket |> assign(:online_map, online_map)}
   end
 end
