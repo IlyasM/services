@@ -4,6 +4,7 @@ defmodule Api.Repo.Migrations.CreateCategories do
   def change do
     create table(:categories) do
       add(:name, :string)
+      add(:question, :string)
 
       timestamps()
     end

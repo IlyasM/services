@@ -2,6 +2,7 @@ defmodule Api.Businesses.Business do
   use Ecto.Schema
   import Ecto.Changeset
   alias Api.Media.BusinessPhoto
+  @derive {Poison.Encoder, only: [:id, :name, :short, :long, :category, :online]}
 
   schema "businesses" do
     field(:long, :string)

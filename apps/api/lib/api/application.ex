@@ -13,7 +13,7 @@ defmodule Api.Application do
       # Start the endpoint when the application starts
       supervisor(ApiWeb.Endpoint, []),
       # Start your own worker by calling: Api.Worker.start_link(arg1, arg2, arg3)
-      # worker(Api.Worker, [arg1, arg2, arg3]),
+      worker(Api.CacheWorker, [])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

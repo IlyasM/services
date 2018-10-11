@@ -13,10 +13,11 @@ defmodule ApiWeb.UserChannel do
       send(self(), :after_join)
     end
 
-    {messages, statuses} = Helper.events(id, event_id)
+    {messages, statuses, last_event_id} = Helper.events(id, event_id)
 
-    {:ok, %{messages: messages, statuses: statuses},
+    {:ok, %{messages: messages, statuses: statuses, last_event_id: last_event_id},
      socket
+     |> assign(:entity_id, id)
      |> assign(:tracking_ids, ids)
      |> assign(:online_map, %{})}
   end
@@ -27,6 +28,39 @@ defmodule ApiWeb.UserChannel do
     # to_id is of this form: business:id
     ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
     {:reply, {:ok, message}, socket}
+  end
+
+  def handle_in("biz:category", params, socket) do
+    cat = Api.CacheWorker.lookup(Api.CacheWorker, params["id"])
+
+    businesses =
+      cat.businesses
+      |> Enum.map(fn business ->
+        Map.put(business, :online, Helper.online?(business.id, "business"))
+      end)
+      |> IO.inspect()
+
+    {:reply, {:ok, %{businesses: businesses}}, socket}
+  end
+
+  def handle_in("bulk:delivered", params, socket) do
+    messages =
+      params["ids"]
+      |> Enum.map(fn id ->
+        %{
+          text: "delivered",
+          type: "status",
+          to_id: id,
+          from_id: socket.assigns.entity_id,
+          inserted_at: DateTime.utc_now(),
+          updated_at: DateTime.utc_now()
+        }
+      end)
+
+    Helper.msg_bulk(messages)
+    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.to_id, "new:msg", &1))
+
+    {:noreply, socket}
   end
 
   def handle_in("typing", %{"to_id" => id}, socket) do
@@ -87,8 +121,8 @@ defmodule ApiWeb.UserChannel do
 
   def handle_info(:after_join, socket) do
     online_map = Helper.online_map(socket.assigns.tracking_ids, "business")
-
-    push(socket, "chats_online", online_map)
+    # IO.inspect(%{online: online_map, categories: Helper.categories()})
+    push(socket, "after:join", %{online: online_map, categories: Helper.categories()})
 
     {:noreply, socket |> assign(:online_map, online_map)}
   end

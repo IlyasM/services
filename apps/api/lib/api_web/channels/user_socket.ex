@@ -4,7 +4,7 @@ defmodule ApiWeb.UserSocket do
   ## Channels
   channel("user:*", ApiWeb.UserChannel)
   channel("business:*", ApiWeb.BusinessChannel)
-  channel("category:*", ApiWeb.CategoryChannel)
+  # channel("category:*", ApiWeb.CategoryChannel)
   # channel "presence"
 
   ## Transports
@@ -23,7 +23,11 @@ defmodule ApiWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(%{"user_id" => user_id}, socket) do
+    # IO.inspect("here we go")
+    # IO.inspect(params)
     user = Api.Repo.get!(Api.Accounts.User, user_id)
+    IO.inspect(user)
+    # IO.inspect("here in connect")
     {:ok, socket |> assign(:current_user, user)}
   end
 

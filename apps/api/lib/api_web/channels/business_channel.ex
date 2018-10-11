@@ -11,15 +11,15 @@ defmodule ApiWeb.BusinessChannel do
       ) do
     send(self(), {:after_join, ids})
 
-    business =
-      Repo.get(Business, business_id)
-      |> Repo.preload(:category)
+    business = Api.CacheWorker.lookup(Api.CacheWorker, id)
 
     :ok = ApiWeb.Endpoint.subscribe("category:#{business.category.name}")
-    {messages, statuses} = Helper.events(id, event_id)
 
-    {:ok, %{messages: messages, statuses: statuses},
+    {messages, statuses, last_event_id} = Helper.events(id, event_id)
+
+    {:ok, %{messages: messages, statuses: statuses, last_event_id: last_event_id},
      socket
+     |> assign(:entity_id, id)
      |> assign(:tracking_ids, ids)
      |> assign(:business, business)
      |> assign(:online_map, %{})}
@@ -31,6 +31,26 @@ defmodule ApiWeb.BusinessChannel do
     # to_id is of this form: user:id
     ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
     {:reply, {:ok, message}, socket}
+  end
+
+  def handle_in("bulk:delivered", params, socket) do
+    messages =
+      params["ids"]
+      |> Enum.map(fn id ->
+        %{
+          text: "delivered",
+          type: "status",
+          to_id: id,
+          from_id: socket.assigns.entity_id,
+          inserted_at: DateTime.utc_now(),
+          updated_at: DateTime.utc_now()
+        }
+      end)
+
+    Helper.msg_bulk(messages)
+    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.to_id, "new:msg", &1))
+
+    {:noreply, socket}
   end
 
   def handle_in("typing", %{"to_id" => id}, socket) do
