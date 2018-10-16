@@ -12,7 +12,7 @@ defmodule Api.Businesses.Event do
     field(:type, :string)
     field(:broadcast_id, :string)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

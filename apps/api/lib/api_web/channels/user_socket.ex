@@ -26,7 +26,6 @@ defmodule ApiWeb.UserSocket do
     # IO.inspect("here we go")
     # IO.inspect(params)
     user = Api.Repo.get!(Api.Accounts.User, user_id)
-    IO.inspect(user)
     # IO.inspect("here in connect")
     {:ok, socket |> assign(:current_user, user)}
   end

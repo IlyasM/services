@@ -29,7 +29,23 @@ defmodule ApiWeb.BusinessChannel do
     message = Helper.new_msg(message)
 
     # to_id is of this form: user:id
-    ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
+    if message.type == "reply" do
+      IO.inspect(message)
+
+      ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", %{
+        reply: message,
+        business: socket.assigns.business
+      })
+    else
+      ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
+    end
+
+    if message.type in ["status", "reply"] do
+      {:noreply, socket}
+    else
+      {:reply, {:ok, message}, socket}
+    end
+
     {:reply, {:ok, message}, socket}
   end
 
@@ -57,7 +73,7 @@ defmodule ApiWeb.BusinessChannel do
     ApiWeb.Endpoint.broadcast(
       id,
       "typing",
-      %{"id" => socket.assigns.current_user.id}
+      %{"id" => socket.assigns.entity_id}
     )
 
     {:noreply, socket}
@@ -66,9 +82,8 @@ defmodule ApiWeb.BusinessChannel do
   intercept(["new:msg", "typing"])
 
   def handle_out("new:msg", message, socket) do
-    online_map = Map.put(socket.assigns.online_map, message.from_id, true)
     push(socket, "new:msg", message)
-    {:noreply, socket |> assign(:online_map, online_map)}
+    {:noreply, socket}
   end
 
   def handle_out("typing", payload, socket) do
@@ -81,6 +96,7 @@ defmodule ApiWeb.BusinessChannel do
         %Sb{event: "new:broadcast", payload: payload},
         socket
       ) do
+    IO.inspect("here in handle info new broadcast")
     push(socket, "new:broadcast", payload)
     {:noreply, socket}
   end
@@ -95,8 +111,13 @@ defmodule ApiWeb.BusinessChannel do
 
   def handle_info({:after_join, ids}, socket) do
     online_map = Helper.online_map(ids, "user")
+    broadcasts = Helper.all_broadcasts(socket.assigns.business.category)
 
-    push(socket, "chats_online", online_map)
+    push(
+      socket,
+      "after:join:business",
+      %{online_map: online_map, broadcasts: broadcasts}
+    )
 
     {:noreply, socket |> assign(:online_map, online_map)}
   end

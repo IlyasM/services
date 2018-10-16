@@ -27,7 +27,12 @@ defmodule ApiWeb.UserChannel do
     message = Helper.new_msg(message)
     # to_id is of this form: business:id
     ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
-    {:reply, {:ok, message}, socket}
+
+    if message.type == "status" do
+      {:noreply, socket}
+    else
+      {:reply, {:ok, message}, socket}
+    end
   end
 
   def handle_in("biz:category", params, socket) do
@@ -38,7 +43,6 @@ defmodule ApiWeb.UserChannel do
       |> Enum.map(fn business ->
         Map.put(business, :online, Helper.online?(business.id, "business"))
       end)
-      |> IO.inspect()
 
     {:reply, {:ok, %{businesses: businesses}}, socket}
   end
@@ -67,7 +71,7 @@ defmodule ApiWeb.UserChannel do
     ApiWeb.Endpoint.broadcast(
       id,
       "typing",
-      %{"id" => socket.assigns.current_user.id}
+      %{"id" => socket.assigns.entity_id}
     )
 
     {:noreply, socket}
@@ -78,17 +82,21 @@ defmodule ApiWeb.UserChannel do
 
     broadcast =
       Repo.insert!(%Broadcast{
-        category_id: category.id,
+        category_id: category["id"],
         user_id: user_id,
         text: text
       })
+      |> Repo.preload(:category)
 
-    ApiWeb.Endpoint.broadcast("category:#{category.name}", "new:broadcast", %{
-      category: category,
-      broadcast: broadcast
-    })
+    name = category["name"]
 
-    {:reply, :ok, socket}
+    ApiWeb.Endpoint.broadcast(
+      "category:#{name}",
+      "new:broadcast",
+      broadcast
+    )
+
+    {:reply, {:ok, broadcast}, socket}
   end
 
   def handle_in("deactivate:broadcast", broadcast, socket) do
@@ -105,13 +113,11 @@ defmodule ApiWeb.UserChannel do
     {:reply, {:ok, broadcast}, socket}
   end
 
-  intercept(["new:msg", "reply", "typing"])
+  intercept(["new:msg", "typing"])
 
   def handle_out("new:msg", message, socket) do
-    online_map = Map.put(socket.assigns.online_map, message.from_id, true)
-
     push(socket, "new:msg", message)
-    {:noreply, socket |> assign(:online_map, online_map)}
+    {:noreply, socket}
   end
 
   def handle_out("typing", payload, socket) do

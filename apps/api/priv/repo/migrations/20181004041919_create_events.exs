@@ -15,5 +15,6 @@ defmodule Api.Repo.Migrations.CreateEvents do
 
     create(index(:events, [:to_id]))
     create(index(:events, [:from_id]))
+    create(index(:events, [:broadcast_id]))
   end
 end

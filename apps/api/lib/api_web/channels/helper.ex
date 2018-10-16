@@ -3,8 +3,6 @@ defmodule ApiWeb.ChannelHelper do
   import Ecto.Query
 
   def events(u_or_b_id, event_id) do
-    IO.inspect("here")
-
     events =
       from(e in Event,
         where: e.to_id == ^u_or_b_id,
@@ -26,15 +24,14 @@ defmodule ApiWeb.ChannelHelper do
       |> Enum.reduce(%{}, fn ev, acc ->
         Map.put(acc, ev.from_id, ev)
       end)
+      |> IO.inspect()
 
     # normalising messages
     messages =
       events
-      |> Enum.filter(&(&1.type == "message"))
+      # |> Enum.filter(&(&1.type == "message"))
       |> Enum.reduce(%{}, fn ev, acc ->
-        entity =
-          Api.CacheWorker.lookup(Api.CacheWorker, ev.from_id)
-          |> IO.inspect()
+        entity = Api.CacheWorker.lookup(Api.CacheWorker, ev.from_id)
 
         [prepend, _] =
           ev.from_id
@@ -51,24 +48,49 @@ defmodule ApiWeb.ChannelHelper do
           acc,
           ev.from_id,
           %{
-            events: [ev],
-            last: ev,
-            id: ev.id,
+            events:
+              case ev.type do
+                "message" -> [ev]
+                _ -> []
+              end,
+            last: last_event(ev),
+            id: entity.id,
             state: "normal",
             name: entity.name,
             category: category,
             online: online?(entity.id, prepend),
             count: 1
           },
-          &%{&1 | events: [ev | &1.events], id: ev.id, last: ev}
+          &%{
+            &1
+            | events:
+                case ev.type do
+                  "message" -> [ev | &1.events]
+                  _ -> &1.events
+                end,
+              last: last_event(ev)
+          }
         )
       end)
 
     {messages, statuses, last_event_id}
   end
 
+  defp last_event(ev) do
+    case ev.type do
+      "message" -> ev
+      _ -> nil
+    end
+  end
+
   def categories do
     Repo.all(Category)
+  end
+
+  def all_broadcasts(category) do
+    from(b in Broadcast, where: b.category_id == ^category.id, where: b.active == true)
+    |> Repo.all()
+    |> Repo.preload(:category)
   end
 
   def biz_category(id) do
