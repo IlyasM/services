@@ -24,12 +24,11 @@ defmodule ApiWeb.ChannelHelper do
       |> Enum.reduce(%{}, fn ev, acc ->
         Map.put(acc, ev.from_id, ev)
       end)
-      |> IO.inspect()
 
     # normalising messages
     messages =
       events
-      # |> Enum.filter(&(&1.type == "message"))
+      |> Enum.filter(&(&1.type == "message"))
       |> Enum.reduce(%{}, fn ev, acc ->
         entity = Api.CacheWorker.lookup(Api.CacheWorker, ev.from_id)
 
@@ -48,12 +47,8 @@ defmodule ApiWeb.ChannelHelper do
           acc,
           ev.from_id,
           %{
-            events:
-              case ev.type do
-                "message" -> [ev]
-                _ -> []
-              end,
-            last: last_event(ev),
+            events: [ev],
+            last: ev,
             id: entity.id,
             state: "normal",
             name: entity.name,
@@ -61,26 +56,11 @@ defmodule ApiWeb.ChannelHelper do
             online: online?(entity.id, prepend),
             count: 1
           },
-          &%{
-            &1
-            | events:
-                case ev.type do
-                  "message" -> [ev | &1.events]
-                  _ -> &1.events
-                end,
-              last: last_event(ev)
-          }
+          &%{&1 | events: [ev | &1.events], last: ev}
         )
       end)
 
     {messages, statuses, last_event_id}
-  end
-
-  defp last_event(ev) do
-    case ev.type do
-      "message" -> ev
-      _ -> nil
-    end
   end
 
   def categories do

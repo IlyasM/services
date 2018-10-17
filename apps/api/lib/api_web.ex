@@ -62,7 +62,7 @@ defmodule ApiWeb do
   def db do
     quote do
       alias Api.Repo
-      alias Api.Accounts.{User, Credential}
+      alias Api.Accounts.{User, Token}
       alias Api.Businesses.{Business, Broadcast, Category, Event}
       alias Api.Media.{BusinessPhoto, UserPhoto}
     end

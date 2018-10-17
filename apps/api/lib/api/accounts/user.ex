@@ -4,10 +4,14 @@ defmodule Api.Accounts.User do
   alias Api.Accounts.{Credential}
   alias Api.Media.UserPhoto
   alias Api.Businesses.{Broadcast}
+  @derive {Poison.Encoder, only: [:id, :name]}
 
   schema "users" do
     field(:name, :string)
-    has_one(:credential, Credential)
+    field(:email, :string)
+    field(:phone, :string)
+    field(:verified, :boolean, default: false)
+
     has_one(:avatar, UserPhoto)
     has_many(:broadcasts, Broadcast)
 
@@ -17,7 +21,7 @@ defmodule Api.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name])
-    |> validate_required([:name])
+    |> cast(attrs, [:email, :name, :phone])
+    |> validate_required([:email])
   end
 end

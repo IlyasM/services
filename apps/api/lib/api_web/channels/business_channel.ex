@@ -27,26 +27,18 @@ defmodule ApiWeb.BusinessChannel do
 
   def handle_in("new:msg", message, socket) do
     message = Helper.new_msg(message)
-
+    user = Api.CacheWorker.lookup(Api.CacheWorker, message.to_id)
     # to_id is of this form: user:id
-    if message.type == "reply" do
-      IO.inspect(message)
-
-      ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", %{
-        reply: message,
-        business: socket.assigns.business
-      })
-    else
-      ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
-    end
+    ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", %{
+      message: message,
+      from: socket.assigns.business
+    })
 
     if message.type in ["status", "reply"] do
       {:noreply, socket}
     else
-      {:reply, {:ok, message}, socket}
+      {:reply, {:ok, %{message: message, from: user}}, socket}
     end
-
-    {:reply, {:ok, message}, socket}
   end
 
   def handle_in("bulk:delivered", params, socket) do
@@ -64,7 +56,8 @@ defmodule ApiWeb.BusinessChannel do
       end)
 
     Helper.msg_bulk(messages)
-    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.to_id, "new:msg", &1))
+    |> Enum.map(&%{message: &1, from: socket.assigns.business})
+    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.message.to_id, "new:msg", &1))
 
     {:noreply, socket}
   end
@@ -96,7 +89,6 @@ defmodule ApiWeb.BusinessChannel do
         %Sb{event: "new:broadcast", payload: payload},
         socket
       ) do
-    IO.inspect("here in handle info new broadcast")
     push(socket, "new:broadcast", payload)
     {:noreply, socket}
   end

@@ -1,0 +1,5 @@
+<td align="center" style="border-radius: 3px;">
+<h1><%= @code%></h1>
+</td>
+
+

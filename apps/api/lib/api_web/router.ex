@@ -13,16 +13,14 @@ defmodule ApiWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/", ApiWeb do
+  scope "/api", ApiWeb do
     # Use the default browser stack
-    pipe_through(:browser)
+    pipe_through(:api)
 
     get("/", PageController, :index)
     resources("/user", UserController, except: [:new, :edit])
-  end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ApiWeb do
-  #   pipe_through :api
-  # end
+    post("/register", AuthController, :get_code)
+    post("/verify", AuthController, :verify_code)
+  end
 end

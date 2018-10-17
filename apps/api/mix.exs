@@ -47,7 +47,9 @@ defmodule Api.Mixfile do
       {:inflex, "~> 1.10.0"},
       {:ex_phone_number, "~> 0.1"},
       {:geocoder, "~> 0.6.2", override: true},
-      {:cowboy, "~> 1.0"}
+      {:cowboy, "~> 1.0"},
+      {:swoosh, "~> 0.20.0"},
+      {:phoenix_swoosh, "~> 0.2.0"}
     ]
   end
 

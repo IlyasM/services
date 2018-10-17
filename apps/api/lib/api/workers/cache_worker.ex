@@ -50,6 +50,9 @@ defmodule Api.CacheWorker do
         category = Repo.get(Category, id) |> Repo.preload(businesses: [:category])
         :ets.insert(table, {cat_id, category})
         :ets.insert(table, {"business:#{id}"})
+
+      %User{id: id} = user ->
+        :ets.insert(table, {id, user})
     end
 
     {:noreply, table}

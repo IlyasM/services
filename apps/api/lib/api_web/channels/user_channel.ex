@@ -25,13 +25,17 @@ defmodule ApiWeb.UserChannel do
   # message.type = reply|message|status
   def handle_in("new:msg", message, socket) do
     message = Helper.new_msg(message)
+    biz = Api.CacheWorker.lookup(Api.CacheWorker, message.to_id)
     # to_id is of this form: business:id
-    ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", message)
+    ApiWeb.Endpoint.broadcast(message.to_id, "new:msg", %{
+      message: message,
+      from: socket.assigns.current_user
+    })
 
     if message.type == "status" do
       {:noreply, socket}
     else
-      {:reply, {:ok, message}, socket}
+      {:reply, {:ok, %{message: message, from: biz}}, socket}
     end
   end
 
@@ -62,7 +66,8 @@ defmodule ApiWeb.UserChannel do
       end)
 
     Helper.msg_bulk(messages)
-    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.to_id, "new:msg", &1))
+    |> Enum.map(&%{message: &1, from: socket.assigns.current_user})
+    |> Enum.each(&ApiWeb.Endpoint.broadcast(&1.message.to_id, "new:msg", &1))
 
     {:noreply, socket}
   end
