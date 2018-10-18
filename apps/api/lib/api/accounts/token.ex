@@ -22,7 +22,7 @@ defmodule Api.Accounts.Token do
     |> put_assoc(:user, user)
   end
 
-  @code_time 1800
+  @code_time 300
   def verify_code(code, email) do
     with {:ok, %{token: token}} <- multi(code, email),
          true <- verify?(token.value, @code_time) do
@@ -34,7 +34,7 @@ defmodule Api.Accounts.Token do
       {:error, :token, err, _} ->
         {:error, "incorrect code"}
 
-      {:error, :expired} ->
+      false ->
         {:error, "code expired"}
     end
   end
@@ -46,8 +46,11 @@ defmodule Api.Accounts.Token do
            value,
            max_age: time
          ) do
-      {:ok, _} -> true
-      _ -> false
+      {:ok, _} ->
+        true
+
+      _ ->
+        false
     end
   end
 

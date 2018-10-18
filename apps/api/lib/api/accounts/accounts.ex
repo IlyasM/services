@@ -19,10 +19,20 @@ defmodule Api.Accounts do
       Repo.transaction(fn ->
         user = get_or_insert(email)
 
-        from(t in Token, where: t.user_id == ^user.id)
-        |> Repo.delete_all()
+        token =
+          case Repo.get_by(Token, user_id: user.id) do
+            %Token{} = token ->
+              if Token.verify?(token.value, 300) do
+                token
+              else
+                delete_expired(token)
+                insert_token_for(user)
+              end
 
-        token = Repo.insert!(Token.changeset(%Token{}, user))
+            _ ->
+              insert_token_for(user)
+          end
+
         token.code
       end)
 
@@ -48,5 +58,13 @@ defmodule Api.Accounts do
   # returns true|false
   def check_token(value) do
     Token.verify?(value, @verified_time)
+  end
+
+  defp delete_expired(token) do
+    Repo.delete(token)
+  end
+
+  defp insert_token_for(user) do
+    Repo.insert!(Token.changeset(%Token{}, user))
   end
 end
