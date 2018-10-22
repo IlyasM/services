@@ -25,13 +25,13 @@ defmodule Api.Accounts.Token do
   @code_time 300
   def verify_code(code, email) do
     with {:ok, %{token: token}} <- multi(code, email),
-         true <- verify?(token.value, @code_time) do
+         {:ok, _} <- verify?(token.value, @code_time) do
       token
     else
       {:error, :user, _, _} ->
         {:error, "user not found"}
 
-      {:error, :token, err, _} ->
+      {:error, :token, _error, _} ->
         {:error, "incorrect code"}
 
       false ->
@@ -46,8 +46,8 @@ defmodule Api.Accounts.Token do
            value,
            max_age: time
          ) do
-      {:ok, _} ->
-        true
+      {:ok, res} ->
+        {:ok, get_user(res)}
 
       _ ->
         false
@@ -72,6 +72,11 @@ defmodule Api.Accounts.Token do
     |> Repo.transaction()
   end
 
+  defp get_user(str) do
+    [email, id] = String.split(str, ":")
+    %{email: email, id: String.to_integer(id)}
+  end
+
   defp random_code do
     :random.seed(:os.timestamp())
     round(:random.uniform() * 9000) + 1000
@@ -80,7 +85,11 @@ defmodule Api.Accounts.Token do
   defp generate_token(nil), do: nil
 
   defp generate_token(user) do
-    Phoenix.Token.sign(context(), "user salt", user.email)
+    Phoenix.Token.sign(
+      context(),
+      "user salt",
+      user.email <> ":" <> Integer.to_string(user.id)
+    )
   end
 
   defp context do

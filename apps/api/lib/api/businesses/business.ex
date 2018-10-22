@@ -9,7 +9,7 @@ defmodule Api.Businesses.Business do
     field(:name, :string)
     field(:short, :string)
     field(:calling_phones, {:array, :string})
-    field(:operator_ids, {:array, :integer})
+    field(:operator_ids, {:array, :string})
 
     has_one(:avatar, BusinessPhoto)
 
@@ -27,7 +27,6 @@ defmodule Api.Businesses.Business do
   @doc false
   def changeset(business, attrs) do
     business
-    |> cast(attrs, [:short, :long, :name])
-    |> validate_required([:name])
+    |> cast(attrs, [:short, :long, :name, :category_id, :operator_ids, :user_id])
   end
 end

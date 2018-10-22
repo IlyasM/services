@@ -18,7 +18,7 @@ defmodule Api.Repo.Migrations.CreateCategories do
       add(:user_id, references(:users, on_delete: :nothing))
       add(:category_id, references(:categories, on_delete: :nothing), null: false)
       add(:calling_phones, {:array, :string})
-      add(:operator_ids, {:array, :integer})
+      add(:operator_ids, {:array, :string})
 
       timestamps
     end

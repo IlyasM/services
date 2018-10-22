@@ -39,17 +39,6 @@ defmodule Api.Accounts do
     code
   end
 
-  def get_or_insert(email) do
-    case Repo.get_by(User, email: email) do
-      nil ->
-        User.changeset(%User{}, %{email: email})
-        |> Repo.insert!()
-
-      user ->
-        user
-    end
-  end
-
   # returns token | error string
   def verify_code(code, email) do
     Token.verify_code(code, email)
@@ -58,6 +47,17 @@ defmodule Api.Accounts do
   # returns true|false
   def check_token(value) do
     Token.verify?(value, @verified_time)
+  end
+
+  defp get_or_insert(email) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        User.changeset(%User{}, %{email: email})
+        |> Repo.insert!()
+
+      user ->
+        user
+    end
   end
 
   defp delete_expired(token) do
