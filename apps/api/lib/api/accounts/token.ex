@@ -66,7 +66,7 @@ defmodule Api.Accounts.Token do
     |> Ecto.Multi.run(:token, fn %{user: user} ->
       case Repo.get_by(__MODULE__, user_id: user.id, code: code) do
         nil -> {:error, "incorrect code"}
-        user -> {:ok, user}
+        token -> {:ok, token}
       end
     end)
     |> Repo.transaction()

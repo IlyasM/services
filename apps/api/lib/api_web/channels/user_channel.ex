@@ -15,7 +15,8 @@ defmodule ApiWeb.UserChannel do
 
     {messages, statuses, last_event_id} = Helper.events(id, event_id)
 
-    {:ok, %{messages: messages, statuses: statuses, last_event_id: last_event_id},
+    {:ok,
+     %{messages: messages, statuses: statuses, last_event_id: last_event_id},
      socket
      |> assign(:entity_id, id)
      |> assign(:tracking_ids, ids)
@@ -82,7 +83,11 @@ defmodule ApiWeb.UserChannel do
     {:noreply, socket}
   end
 
-  def handle_in("new:broadcast", %{"category" => category, "text" => text}, socket) do
+  def handle_in(
+        "new:broadcast",
+        %{"category" => category, "text" => text},
+        socket
+      ) do
     user_id = socket.assigns.current_user.id
 
     broadcast =
@@ -122,6 +127,7 @@ defmodule ApiWeb.UserChannel do
 
   def handle_out("new:msg", message, socket) do
     push(socket, "new:msg", message)
+    IO.inspect("in handle out of user chanell")
     {:noreply, socket}
   end
 
@@ -133,7 +139,10 @@ defmodule ApiWeb.UserChannel do
   def handle_info(:after_join, socket) do
     online_map = Helper.online_map(socket.assigns.tracking_ids, "business")
     # IO.inspect(%{online: online_map, categories: Helper.categories()})
-    push(socket, "after:join", %{online: online_map, categories: Helper.categories()})
+    push(socket, "after:join", %{
+      online: online_map,
+      categories: Helper.categories()
+    })
 
     {:noreply, socket |> assign(:online_map, online_map)}
   end

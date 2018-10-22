@@ -4,7 +4,7 @@ defmodule Api.Accounts.User do
   alias Api.Accounts.{Credential}
   alias Api.Media.UserPhoto
   alias Api.Businesses.{Broadcast}
-  @derive {Poison.Encoder, only: [:id, :name]}
+  @derive {Poison.Encoder, only: [:id, :name, :email, :phone]}
 
   schema "users" do
     field(:name, :string)

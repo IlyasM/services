@@ -8,10 +8,14 @@ defmodule ApiWeb.BusinessController do
     changeset =
       Business.changeset(
         %Business{},
-        %{params | "user_id" => current_user.id}
+        Map.put(params, "user_id", current_user.id)
       )
 
-    business = Repo.insert!(changeset) |> Repo.preload(:category)
+    business =
+      Repo.insert!(changeset)
+      |> Repo.preload(:category)
+
+    Api.CacheWorker.new(business)
 
     json(conn, %{business: business})
   end

@@ -29,6 +29,6 @@ defmodule ApiWeb.Router do
     pipe_through(:authenticate)
     get("/categories", CategoryController, :index)
     post("/business/new", BusinessController, :create)
-    resources("/user", UserController, except: [:new, :edit])
+    post("/user/update", UserController, :update)
   end
 end

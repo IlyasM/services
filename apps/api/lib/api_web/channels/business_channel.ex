@@ -17,7 +17,8 @@ defmodule ApiWeb.BusinessChannel do
 
     {messages, statuses, last_event_id} = Helper.events(id, event_id)
 
-    {:ok, %{messages: messages, statuses: statuses, last_event_id: last_event_id},
+    {:ok,
+     %{messages: messages, statuses: statuses, last_event_id: last_event_id},
      socket
      |> assign(:entity_id, id)
      |> assign(:tracking_ids, ids)
@@ -76,6 +77,8 @@ defmodule ApiWeb.BusinessChannel do
 
   def handle_out("new:msg", message, socket) do
     push(socket, "new:msg", message)
+    IO.inspect("in handle out of user chanell")
+    IO.inspect(message)
     {:noreply, socket}
   end
 
@@ -94,7 +97,11 @@ defmodule ApiWeb.BusinessChannel do
   end
 
   def handle_info(
-        %Sb{topic: "category:" <> _, event: "deactivate:broadcast", payload: payload},
+        %Sb{
+          topic: "category:" <> _,
+          event: "deactivate:broadcast",
+          payload: payload
+        },
         socket
       ) do
     push(socket, "deactivate:broadcast", payload)

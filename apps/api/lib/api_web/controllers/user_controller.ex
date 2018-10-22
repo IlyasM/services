@@ -4,7 +4,7 @@ defmodule ApiWeb.UserController do
   alias Api.Accounts
   alias Api.Accounts.User
 
-  action_fallback ApiWeb.FallbackController
+  action_fallback(ApiWeb.FallbackController)
 
   def index(conn, _params) do
     users = Accounts.list_users()
@@ -25,16 +25,14 @@ defmodule ApiWeb.UserController do
     render(conn, "show.json", user: user)
   end
 
-  def update(conn, %{"id" => id, "user" => user_params}) do
-    user = Accounts.get_user!(id)
-
-    with {:ok, %User{} = user} <- Accounts.update_user(user, user_params) do
-      render(conn, "show.json", user: user)
-    end
+  def update(conn, %{"user" => user_params}) do
+    user = Accounts.update_user!(conn.assigns.current_user, user_params)
+    json(conn, %{user: user})
   end
 
   def delete(conn, %{"id" => id}) do
     user = Accounts.get_user!(id)
+
     with {:ok, %User{}} <- Accounts.delete_user(user) do
       send_resp(conn, :no_content, "")
     end

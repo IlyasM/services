@@ -1,6 +1,7 @@
 defmodule ApiWeb.UserSocket do
   use Phoenix.Socket
-
+  alias Api.Accounts
+  use ApiWeb, :db
   ## Channels
   channel("user:*", ApiWeb.UserChannel)
   channel("business:*", ApiWeb.BusinessChannel)
@@ -22,12 +23,18 @@ defmodule ApiWeb.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(%{"user_id" => user_id}, socket) do
+  def connect(%{"token" => value}, socket) do
     # IO.inspect("here we go")
     # IO.inspect(params)
-    user = Api.Repo.get!(Api.Accounts.User, user_id)
+    case Accounts.check_token(value) do
+      {:ok, %{id: id, email: _}} ->
+        {:ok, socket |> assign(:current_user, Repo.get(User, id))}
+
+      false ->
+        :error
+    end
+
     # IO.inspect("here in connect")
-    {:ok, socket |> assign(:current_user, user)}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:

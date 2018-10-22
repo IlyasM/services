@@ -46,10 +46,14 @@ defmodule Api.CacheWorker do
       %Category{id: id} = category ->
         :ets.insert(table, {id, category})
 
-      %Business{category_id: cat_id, id: id} ->
-        category = Repo.get(Category, id) |> Repo.preload(businesses: [:category])
+      %Business{category_id: cat_id, id: id} = business ->
+        category =
+          Repo.get(Category, cat_id) |> Repo.preload(businesses: [:category])
+
+        IO.inspect(business)
+        IO.inspect(category)
         :ets.insert(table, {cat_id, category})
-        :ets.insert(table, {"business:#{id}"})
+        :ets.insert(table, {"business:#{id}", business})
 
       %User{id: id} = user ->
         :ets.insert(table, {id, user})

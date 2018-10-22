@@ -2,15 +2,15 @@ defmodule Api.Accounts do
   @moduledoc """
   The Accounts context.
   """
-
+  @verified_time 24_000_000
   import Ecto.Query, warn: false
   use ApiWeb, :db
   # half a year
-  @verified_time 24_000_000
-  def update_user(%User{} = user, attrs) do
-    user
-    |> User.changeset(attrs)
-    |> Repo.update()
+
+  def update_user!(%{id: id, email: email}, attrs) do
+    %User{id: id, email: email}
+    |> Ecto.Changeset.change(name: attrs["name"])
+    |> Repo.update!()
   end
 
   # returns code | throws EctoConstraintError if email is not unique
