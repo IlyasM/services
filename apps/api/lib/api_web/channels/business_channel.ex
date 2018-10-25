@@ -77,8 +77,7 @@ defmodule ApiWeb.BusinessChannel do
 
   def handle_out("new:msg", message, socket) do
     push(socket, "new:msg", message)
-    IO.inspect("in handle out of user chanell")
-    IO.inspect(message)
+
     {:noreply, socket}
   end
 
